@@ -270,9 +270,9 @@ CX_API const cx_vfmt CX_VFMT_INST_MAT4 = {
 
 /* Index format */
                             // type, ixsize
-CX_API const cx_ifmt KS_IFMT_U8 = {GL_UNSIGNED_BYTE , sizeof(uint8_t)};
-CX_API const cx_ifmt KS_IFMT_U16 = {GL_UNSIGNED_SHORT, sizeof(uint16_t)};
-CX_API const cx_ifmt KS_IFMT_U32 = {GL_UNSIGNED_INT  , sizeof(uint32_t)};
+CX_API const cx_ifmt CX_IFMT_U8 = {GL_UNSIGNED_BYTE , sizeof(uint8_t)};
+CX_API const cx_ifmt CX_IFMT_U16 = {GL_UNSIGNED_SHORT, sizeof(uint16_t)};
+CX_API const cx_ifmt CX_IFMT_U32 = {GL_UNSIGNED_INT  , sizeof(uint32_t)};
 
 // clang-format on
 

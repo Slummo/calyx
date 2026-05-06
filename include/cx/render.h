@@ -99,9 +99,9 @@ CX_STRUCT(ifmt, {
     uint32_t ixsize;  // size of data type
 });
 
-CX_API extern const cx_ifmt KS_IFMT_U8;
-CX_API extern const cx_ifmt KS_IFMT_U16;
-CX_API extern const cx_ifmt KS_IFMT_U32;
+CX_API extern const cx_ifmt CX_IFMT_U8;
+CX_API extern const cx_ifmt CX_IFMT_U16;
+CX_API extern const cx_ifmt CX_IFMT_U32;
 
 /* Mesh */
 
