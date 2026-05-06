@@ -1,0 +1,3 @@
+[submodule "extern/kitsune"]
+	path = extern/kitsune
+	url = git@github.com:Slummo/kitsune.git

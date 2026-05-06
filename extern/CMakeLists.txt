@@ -5,3 +5,6 @@ target_compile_options(glad PRIVATE
 )
 target_include_directories(glad PUBLIC glad/include)
 add_library(cx::glad ALIAS glad)
+
+# kitsune
+add_subdirectory(kitsune)

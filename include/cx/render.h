@@ -1,7 +1,6 @@
 #ifndef CX_RENDER_H
 #define CX_RENDER_H
 
-#include <ks/core.h>
 #include <ks/math.h>
 #include <ks/ds.h>
 #include <signal.h>

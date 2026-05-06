@@ -72,24 +72,7 @@ endif()
 # Dependencies
 add_subdirectory(extern)
 
-include(FetchContent)
-FetchContent_Declare(
-    kitsune
-    GIT_REPOSITORY  https://github.com/Slummo/kitsune.git
-    GIT_TAG         master
-)
-FetchContent_MakeAvailable(kitsune)
-
 find_package(OpenGL REQUIRED)
 find_package(glfw3 REQUIRED)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC ks::lib cx::glad PRIVATE OpenGL::GL glfw)
-
-# Tests & Examples
-string(TOUPPER "${CMAKE_BUILD_TYPE}" CMAKE_BUILD_TYPE_UPPER)
-if (IS_SELF AND CMAKE_BUILD_TYPE_UPPER STREQUAL "DEBUG")
-    message(STATUS "Building tests...")
-    # add_subdirectory(test)
-    message(STATUS "Building examples...")
-    # add_subdirectory(example)
-endif()
