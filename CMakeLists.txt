@@ -75,4 +75,4 @@ endif()
 find_package(OpenGL REQUIRED)
 find_package(glfw3 REQUIRED)
 
-target_link_libraries(${PROJECT_NAME} PUBLIC ks::lib cx::glad PRIVATE OpenGL::GL glfw)
+target_link_libraries(${PROJECT_NAME} PUBLIC kitsune::lib calyx::glad PRIVATE OpenGL::GL glfw)

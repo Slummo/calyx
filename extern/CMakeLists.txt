@@ -4,7 +4,7 @@ target_compile_options(glad PRIVATE
     -Wno-sign-conversion
 )
 target_include_directories(glad PUBLIC glad/include)
-add_library(cx::glad ALIAS glad)
+add_library(calyx::glad ALIAS glad)
 
 # kitsune
 add_subdirectory(kitsune)
