@@ -20,6 +20,8 @@ if(IS_SELF)
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 endif()
 
+add_subdirectory(extern)
+
 add_library(${PROJECT_NAME} "")
 target_sources(${PROJECT_NAME} PRIVATE
     src/ks_impl.c
@@ -70,8 +72,6 @@ if (IS_SELF)
 endif()
 
 # Dependencies
-add_subdirectory(extern)
-
 find_package(OpenGL REQUIRED)
 find_package(glfw3 REQUIRED)
 
