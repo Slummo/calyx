@@ -76,6 +76,47 @@ CX_API cx_shader cx_shader_create(const char* vert_filename, const char* frag_fi
     return s;
 }
 
+CX_API cx_shader cx_shader_create_compute(const char* comp_filename) {
+    cx_shader s = {0};
+
+    char* comp_src = ks_fread(comp_filename);
+
+    if (!comp_src) {
+        ks_log(KSERR, "Error while reading from shader source");
+        free(comp_src);
+        return s;
+    }
+
+    GLuint compute = compile_shader(GL_COMPUTE_SHADER, comp_src);
+    if (!compute) {
+        ks_log(KSERR, "Error while compiling compute shader");
+        free(comp_src);
+        return s;
+    }
+
+    free(comp_src);
+
+    GLuint p = glCreateProgram();
+    glAttachShader(p, compute);
+    glLinkProgram(p);
+
+    int ret;
+    glGetProgramiv(p, GL_LINK_STATUS, &ret);
+    if (!ret) {
+        char buf[1024];
+        glGetProgramInfoLog(p, 1024, NULL, buf);
+        fprintf(stderr, "%s", buf);
+        glDeleteShader(compute);
+        glDeleteProgram(p);
+        return s;
+    }
+
+    glDeleteShader(compute);
+
+    s.id = p;
+    return s;
+}
+
 CX_API void cx_shader_bind(cx_shader s) {
     glUseProgram(s.id);
 }
@@ -147,6 +188,14 @@ CX_API void cx_buffer_update(cx_buffer b, size_t off, size_t size, const void* d
 
 CX_API void cx_buffer_bind(cx_buffer b) {
     glBindBuffer(b.type, b.id);
+}
+
+CX_API void cx_buffer_base(cx_buffer b, uint32_t index) {
+    glBindBufferBase(b.type, index, b.id);
+}
+
+CX_API void cx_buffer_range(cx_buffer b, uint32_t index, size_t off, size_t size) {
+    glBindBufferRange(b.type, index, b.id, (GLintptr)off, (GLintptr)size);
 }
 
 CX_API void cx_buffer_unbind(uint32_t type) {
@@ -241,6 +290,17 @@ CX_API const cx_vfmt CX_VFMT_INST_VEC3 = {
     .vsize = sizeof(ks_vec3)
 };
 
+CX_API const cx_vfmt CX_VFMT_INST_VEC4 = {
+    .attrs = {
+        .data = {
+            // loc, count, type, offset, stride, divisor
+            {0, 4, GL_FLOAT, 0, sizeof(ks_vec4), 1}
+        },
+        .len = 1
+    },
+    .vsize = sizeof(ks_vec4)
+};
+
 CX_API const cx_vfmt CX_VFMT_INST_MAT3 = {
     .attrs = {
         .data = {
@@ -280,12 +340,10 @@ CX_API const cx_ifmt CX_IFMT_U32 = {GL_UNSIGNED_INT  , sizeof(uint32_t)};
 
 static void _cx_mesh_init_vbo_internal(cx_mesh* m, cx_buffer b, const cx_vfmt* vfmt) {
     KS_ASSERT_NONNULL_ARGS(m && vfmt);
-    if (ks_sa_isfull(&m->vbos)) {
-        return;
-    }
 
     glBindVertexArray(m->vao);
-    cx_buffer_bind(b);
+    // cx_buffer_bind(b);
+    glBindBuffer(GL_ARRAY_BUFFER, b.id);
 
     ks_array_foreach(attr, &vfmt->attrs) {
         uint32_t loc = m->next_loc + attr->loc;
@@ -313,7 +371,10 @@ CX_API cx_mesh cx_mesh_create(void) {
 
 CX_API void cx_mesh_load_vertices(cx_mesh* m, int32_t vcount, const void* verts, const cx_vfmt* vfmt) {
     KS_ASSERT_NONNULL_ARGS(m && verts && vfmt);
-    glBindVertexArray(m->vao);
+    if (ks_sa_isfull(&m->vbos)) {
+        return;
+    }
+
     cx_buffer vbo = cx_buffer_create(GL_ARRAY_BUFFER, (size_t)vcount * vfmt->vsize, verts, GL_STATIC_DRAW);
     _cx_mesh_init_vbo_internal(m, vbo, vfmt);
     ks_sa_push(&m->vbos, vbo);
@@ -324,8 +385,10 @@ CX_API void cx_mesh_load_vertices(cx_mesh* m, int32_t vcount, const void* verts,
 
 CX_API void cx_mesh_load_indices(cx_mesh* m, int32_t ixcount, const void* inds, const cx_ifmt* ifmt) {
     KS_ASSERT_NONNULL_ARGS(m && inds && ifmt);
-    glBindVertexArray(m->vao);
+
     cx_buffer ebo = cx_buffer_create(GL_ELEMENT_ARRAY_BUFFER, (size_t)ixcount * ifmt->ixsize, inds, GL_STATIC_DRAW);
+
+    glBindVertexArray(m->vao);
     cx_buffer_bind(ebo);
 
     m->ebo = ebo;
@@ -338,12 +401,21 @@ CX_API void cx_mesh_load_indices(cx_mesh* m, int32_t ixcount, const void* inds, 
 
 CX_API void cx_mesh_load_instances(cx_mesh* m, int32_t iecount, const void* insts, const cx_vfmt* vfmt) {
     KS_ASSERT_NONNULL_ARGS(m && insts && vfmt);
-    glBindVertexArray(m->vao);
+
     cx_buffer vbo = cx_buffer_create(GL_ARRAY_BUFFER, (size_t)iecount * vfmt->vsize, insts, GL_DYNAMIC_DRAW);
     _cx_mesh_init_vbo_internal(m, vbo, vfmt);
-    ks_sa_push(&m->vbos, vbo);
 
     m->inst_vbo = vbo;
+    m->has_instances = true;
+    m->iecount = iecount;
+}
+
+CX_API void cx_mesh_load_instances_buf(cx_mesh* m, int32_t iecount, cx_buffer b, const cx_vfmt* vfmt) {
+    KS_ASSERT_NONNULL_ARGS(m);
+
+    _cx_mesh_init_vbo_internal(m, b, vfmt);
+
+    m->inst_vbo = b;
     m->has_instances = true;
     m->iecount = iecount;
 }
@@ -365,13 +437,13 @@ CX_API void cx_mesh_draw(cx_mesh* m, cx_shader s) {
     glBindVertexArray(m->vao);
 
     if (m->has_indices) {
-        if (m->iecount > 1) {
+        if (m->has_instances) {
             glDrawElementsInstanced(g_render.primitive, m->ixcount, m->ixtype, NULL, m->iecount);
         } else {
             glDrawElements(g_render.primitive, m->ixcount, m->ixtype, NULL);
         }
     } else {
-        if (m->iecount > 1) {
+        if (m->has_instances) {
             glDrawArraysInstanced(g_render.primitive, 0, m->vcount, m->iecount);
         } else {
             glDrawArrays(g_render.primitive, 0, m->vcount);
@@ -504,7 +576,7 @@ CX_API void cx_drawbox_reset(void) {
 
 CX_API void cx_background(cx_col4 col) {
     glClearColor(col.r, col.g, col.b, col.a);
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 CX_API void cx_wiremode(bool state) {
@@ -515,8 +587,15 @@ CX_API void cx_line_width(float width) {
     glLineWidth(width);
 }
 
+CX_API void cx_dispatch_compute(uint32_t groupsx, uint32_t groupsy, uint32_t groupsz) {
+    glDispatchCompute(groupsx, groupsy, groupsz);
+}
+
+CX_API void cx_mem_barrier(uint32_t flags) {
+    glMemoryBarrier(flags);
+}
+
 CX_API void cx_begin_drawing(void) {
-    glClear(GL_DEPTH_BUFFER_BIT);
     g_render.is_drawing = true;
 }
 

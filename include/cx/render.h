@@ -37,6 +37,7 @@ CX_STRUCT(col4, {
 CX_STRUCT(shader, { uint32_t id; });
 
 CX_API cx_shader cx_shader_create(const char* vert_filename, const char* frag_filename);
+CX_API cx_shader cx_shader_create_compute(const char* comp_filename);
 CX_API void cx_shader_bind(cx_shader s);
 CX_API void cx_shader_unbind(void);
 CX_API void cx_shader_set_int(cx_shader s, const char* name, int* data);
@@ -58,6 +59,8 @@ CX_STRUCT(buffer, {
 CX_API cx_buffer cx_buffer_create(uint32_t type, size_t size, const void* data, uint32_t usage);
 CX_API void cx_buffer_update(cx_buffer b, size_t off, size_t size, const void* data);
 CX_API void cx_buffer_bind(cx_buffer b);
+CX_API void cx_buffer_base(cx_buffer b, uint32_t index);
+CX_API void cx_buffer_range(cx_buffer b, uint32_t index, size_t off, size_t size);
 CX_API void cx_buffer_unbind(uint32_t type);
 CX_API void cx_buffer_destroy(cx_buffer b);
 
@@ -90,6 +93,7 @@ CX_API extern const cx_vfmt CX_VFMT_POS3_COL3;
 CX_API extern const cx_vfmt CX_VFMT_INST_FLOAT;
 CX_API extern const cx_vfmt CX_VFMT_INST_VEC2;
 CX_API extern const cx_vfmt CX_VFMT_INST_VEC3;
+CX_API extern const cx_vfmt CX_VFMT_INST_VEC4;
 CX_API extern const cx_vfmt CX_VFMT_INST_MAT3;
 CX_API extern const cx_vfmt CX_VFMT_INST_MAT4;
 
@@ -124,6 +128,7 @@ CX_API cx_mesh cx_mesh_create(void);
 CX_API void cx_mesh_load_vertices(cx_mesh* m, int32_t vcount, const void* verts, const cx_vfmt* vfmt);
 CX_API void cx_mesh_load_indices(cx_mesh* m, int32_t ixcount, const void* inds, const cx_ifmt* ifmt);
 CX_API void cx_mesh_load_instances(cx_mesh* m, int32_t iecount, const void* insts, const cx_vfmt* vfmt);
+CX_API void cx_mesh_load_instances_buf(cx_mesh* m, int32_t iecount, cx_buffer b, const cx_vfmt* vfmt);
 CX_API void cx_mesh_update_instances(cx_mesh* m, int32_t iecount, const void* insts, const cx_vfmt* vfmt);
 CX_API void cx_mesh_draw(cx_mesh* m, cx_shader s);
 CX_API void cx_mesh_destroy(cx_mesh* m);
@@ -173,6 +178,8 @@ CX_API void cx_drawbox_reset(void);
 CX_API void cx_background(cx_col4 col);
 CX_API void cx_wiremode(bool state);
 CX_API void cx_line_width(float width);
+CX_API void cx_dispatch_compute(uint32_t groupsx, uint32_t groupsy, uint32_t groupsz);
+CX_API void cx_mem_barrier(uint32_t flags);
 CX_API void cx_begin_drawing(void);
 CX_API void cx_draw_line(ks_vec3 p1, ks_vec3 p2, float size, cx_col4 c);
 CX_API void cx_draw_rect(ks_vec3 left, ks_vec3 dim, float line_size, cx_col4 c);
