@@ -1,4 +1,5 @@
 #include <cx/render.h>
+#include <ks/time.h>
 #include <ks/io.h>
 
 /* Shader */
@@ -103,8 +104,8 @@ CX_API cx_shader cx_shader_create_compute(const char* comp_filename) {
     int ret;
     glGetProgramiv(p, GL_LINK_STATUS, &ret);
     if (!ret) {
-        char buf[1024];
-        glGetProgramInfoLog(p, 1024, NULL, buf);
+        char buf[4096];
+        glGetProgramInfoLog(p, 4096, NULL, buf);
         fprintf(stderr, "%s", buf);
         glDeleteShader(compute);
         glDeleteProgram(p);
@@ -125,16 +126,22 @@ CX_API void cx_shader_unbind(void) {
     glUseProgram(0);
 }
 
-CX_API void cx_shader_set_int(cx_shader s, const char* name, int* data) {
+CX_API void cx_shader_set_int32(cx_shader s, const char* name, int32_t data) {
     GLint loc = glGetUniformLocation(s.id, name);
     KS_ASSERT(loc != -1, "Uniform not found");
-    glUniform1iv(loc, 1, data);
+    glUniform1i(loc, data);
 }
 
-CX_API void cx_shader_set_float(cx_shader s, const char* name, float* data) {
+CX_API void cx_shader_set_uint32(cx_shader s, const char* name, uint32_t data) {
     GLint loc = glGetUniformLocation(s.id, name);
     KS_ASSERT(loc != -1, "Uniform not found");
-    glUniform1fv(loc, 1, data);
+    glUniform1ui(loc, data);
+}
+
+CX_API void cx_shader_set_float(cx_shader s, const char* name, float data) {
+    GLint loc = glGetUniformLocation(s.id, name);
+    KS_ASSERT(loc != -1, "Uniform not found");
+    glUniform1f(loc, data);
 }
 
 CX_API void cx_shader_set_vec2(cx_shader s, const char* name, float* data) {
@@ -518,6 +525,7 @@ CX_API void cx_render_init(int32_t width, int32_t height, const char* title) {
     }
     glfwMakeContextCurrent(window);
     glfwShowWindow(window);
+    glfwSwapInterval(1);
 
     // Load OpenGL functions
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
@@ -547,6 +555,16 @@ CX_API void cx_render_init(int32_t width, int32_t height, const char* title) {
     g_render.win = window;
     g_render.primitive = GL_TRIANGLES;
     // TODO: init batcher
+}
+
+CX_API float cx_win_refresh_rate(void) {
+    double start = glfwGetTime();
+    for (int i = 0; i < 60; ++i) {
+        glfwPollEvents();
+        glfwSwapBuffers(g_render.win);
+    }
+    double end = glfwGetTime();
+    return 60.0f / (float)(end - start);
 }
 
 CX_API bool cx_win_should_close(void) {

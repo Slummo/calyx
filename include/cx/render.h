@@ -9,28 +9,48 @@
 
 #include <cx/core.h>
 
-CX_STRUCT(col3, {
-    float r;
-    float g;
-    float b;
+CX_UNION(col3, {
+    struct {
+        float r;
+        float g;
+        float b;
+    };
+    float data[3];
 });
 
 #define CX_COL3(r, g, b) \
     (cx_col3) {          \
-        r, g, b          \
+        {                \
+            r, g, b      \
+        }                \
     }
 
-CX_STRUCT(col4, {
-    float r;
-    float g;
-    float b;
-    float a;
+static inline float* cx_col3_ptr(cx_col3* col) {
+    KS_ASSERT_NONNULL_ARGS(col);
+    return col->data;
+}
+
+CX_UNION(col4, {
+    struct {
+        float r;
+        float g;
+        float b;
+        float a;
+    };
+    float data[4];
 });
 
 #define CX_COL4(r, g, b, a) \
     (cx_col4) {             \
-        r, g, b, a          \
+        {                   \
+            r, g, b, a      \
+        }                   \
     }
+
+static inline float* cx_col4_ptr(cx_col4* col) {
+    KS_ASSERT_NONNULL_ARGS(col);
+    return col->data;
+}
 
 /* Shader */
 
@@ -40,8 +60,9 @@ CX_API cx_shader cx_shader_create(const char* vert_filename, const char* frag_fi
 CX_API cx_shader cx_shader_create_compute(const char* comp_filename);
 CX_API void cx_shader_bind(cx_shader s);
 CX_API void cx_shader_unbind(void);
-CX_API void cx_shader_set_int(cx_shader s, const char* name, int* data);
-CX_API void cx_shader_set_float(cx_shader s, const char* name, float* data);
+CX_API void cx_shader_set_int32(cx_shader s, const char* name, int32_t data);
+CX_API void cx_shader_set_uint32(cx_shader s, const char* name, uint32_t data);
+CX_API void cx_shader_set_float(cx_shader s, const char* name, float data);
 CX_API void cx_shader_set_vec2(cx_shader s, const char* name, float* data);
 CX_API void cx_shader_set_vec3(cx_shader s, const char* name, float* data);
 CX_API void cx_shader_set_vec4(cx_shader s, const char* name, float* data);
@@ -169,6 +190,7 @@ CX_STRUCT(render_ctx, {
 CX_API extern cx_render_ctx g_render;
 
 CX_API void cx_render_init(int32_t width, int32_t height, const char* title);
+CX_API float cx_win_refresh_rate(void);
 CX_API bool cx_win_should_close(void);
 CX_API void cx_win_resize_cb(cx_win_resize cb);
 CX_API ks_vec2 cx_win_size(void);
